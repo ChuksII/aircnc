@@ -13,14 +13,27 @@ const app = express();
 const server = http.Server(app);
 const io = socketio(server);
 
-io.on('connection', socket => {
-    console.log('Usuario conectado', socket.id);
-});
-
 
 mongoose.connect('mongodb://chukinho:slammer@aircnc-shard-00-00-wjc9b.mongodb.net:27017,aircnc-shard-00-01-wjc9b.mongodb.net:27017,aircnc-shard-00-02-wjc9b.mongodb.net:27017/aircncdb?ssl=true&replicaSet=AirCnC-shard-0&authSource=admin&retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+});
+
+
+const connectedUsers = {};
+
+io.on('connection', socket => {
+
+    const { user_id } = socket.handshake.query;
+
+    connectedUsers[user_id] = socket.id;
+});
+
+app.use((req, res, next) => {
+    req.io = io;
+    req.connectedUsers = connectedUsers;
+    
+    return next();
 });
 
 app.use(cors());
